@@ -1,5 +1,6 @@
 from tkinter import Tk, BOTH, Canvas
 from time import sleep
+import random
 
 class Window:
     
@@ -63,6 +64,7 @@ class Cell:
         self._top_left = top_left
         self._bottom_right = bottom_right
         self._win = window
+        self.visited = False
 
     def draw(self):
         #my badckground appears to be gray85. There's probably a way to pull that info in case that's not a static default
@@ -93,12 +95,13 @@ class Cell:
             self._win.draw_line(whole_line,"red")
 
 class Maze:
-    def __init__(self, num_rows, num_cols, cell_size, window, upper_left = Point(10,10)):
+    def __init__(self, num_rows, num_cols, cell_size, window, seed = None, upper_left = Point(10,10)):
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.cell_size = cell_size
         self._win = window
         self.upper_left = upper_left
+        self._seed = random.seed(seed)
         self._create_cells()
 
     def _create_cells(self):
@@ -118,6 +121,62 @@ class Maze:
                 cell.draw()
                 self._animate()
 
+        self._break_walls_r(0,0)
+
+    #I don't currently understand why it doesn't completely stop the first time it can't pick a direction
+    def _break_walls_r(self, i, j):
+        self._cells[i][j].visited = True
+
+        while True:
+            unvisited_neighbors = []
+            num_u_n = 0
+
+            #is left available:
+            if i > 0 and not self._cells[i-1][j].visited:
+                unvisited_neighbors.append([i-1,j])
+                num_u_n += 1
+            #is right available:
+            if i < self.num_cols - 1 and not self._cells[i+1][j].visited:
+                unvisited_neighbors.append([i+1,j])
+                num_u_n += 1
+            #is up available:
+            if j > 0 and not self._cells[i][j-1].visited:
+                unvisited_neighbors.append([i,j-1])
+                num_u_n += 1
+            #is down available:
+            if j < self.num_rows - 1 and not self._cells[i][j+1].visited:
+                unvisited_neighbors.append([i,j+1])
+                num_u_n += 1
+
+            if num_u_n < 1:
+                self._cells[i][j].draw()
+                return
+            
+            moving_to = unvisited_neighbors[random.randrange(num_u_n)]
+
+            #left
+            if moving_to[0] < i:
+                self._cells[i][j].has_left_wall = False
+                self._cells[i-1][j].has_right_wall = False
+            #right
+            if moving_to[0] > i:
+                self._cells[i][j].has_right_wall = False
+                self._cells[i+1][j].has_left_wall = False
+            #top
+            if moving_to[1] < j:
+                self._cells[i][j].has_top_wall = False
+                self._cells[i][j-1].has_bottom_wall = False
+            #bottom
+            if moving_to[1] > j:
+                self._cells[i][j].has_bottom_wall = False
+                self._cells[i][j+1].has_top_wall = False
+
+            self._cells[i][j].draw()
+            self._cells[moving_to[0]][moving_to[1]].draw()
+            self._animate()
+
+            self._break_walls_r(moving_to[0],moving_to[1])
+
     def _animate(self):
         self._win.redraw()
         sleep(.05)
@@ -132,7 +191,7 @@ class Maze:
 def main():
     my_window = Window(1600,1200)
     
-    my_cells = Maze(10,6,50,my_window)
+    my_cells = Maze(10,6,50,my_window, "test")
 
     my_window.wait_for_close()
 
