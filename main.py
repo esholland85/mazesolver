@@ -55,7 +55,7 @@ class Line:
         canvas.pack()
 
 class Cell:
-    def __init__(self, top_left, bottom_right, window):
+    def __init__(self, top_left, bottom_right, window = None):
         self.has_left_wall = True
         self.has_right_wall = True
         self.has_top_wall = True
@@ -64,16 +64,24 @@ class Cell:
         self._bottom_right = bottom_right
         self._win = window
 
-    #possibly redundant once maze has draw_cell
     def draw(self):
+        #my badckground appears to be gray85. There's probably a way to pull that info in case that's not a static default
         if self.has_left_wall:
             self._win.draw_line(Line(self._top_left,Point(self._top_left.x,self._bottom_right.y)),"black")
+        else:
+            self._win.draw_line(Line(self._top_left,Point(self._top_left.x,self._bottom_right.y)),"gray85")
         if self.has_right_wall:
             self._win.draw_line(Line(Point(self._bottom_right.x,self._top_left.y),self._bottom_right),"black")
+        else:
+            self._win.draw_line(Line(Point(self._bottom_right.x,self._top_left.y),self._bottom_right),"gray85")
         if self.has_top_wall:
             self._win.draw_line(Line(self._top_left,Point(self._bottom_right.x,self._top_left.y)),"black")
+        else:
+            self._win.draw_line(Line(self._top_left,Point(self._bottom_right.x,self._top_left.y)),"gray85")
         if self.has_bottom_wall:
             self._win.draw_line(Line(Point(self._top_left.x,self._bottom_right.y), self._bottom_right),"black")
+        else:
+            self._win.draw_line(Line(Point(self._top_left.x,self._bottom_right.y), self._bottom_right),"gray85")
 
     def draw_move(self, to_cell, undo = False):
         start_point = Point((self._bottom_right.x + self._top_left.x)//2,(self._bottom_right.y + self._top_left.y)//2)
@@ -101,7 +109,10 @@ class Maze:
                 current_upper = Point(self.upper_left.x + i*self.cell_size,self.upper_left.y + j*self.cell_size)
                 current_lower = Point(current_upper.x + self.cell_size,current_upper.y + self.cell_size)
                 self._cells[i].append(Cell(current_upper,current_lower,self._win))
+                #self._cells[i].append(Cell(current_upper,current_lower))
         
+        self._break_entrance_and_exit()
+
         for list in self._cells:
             for cell in list:
                 cell.draw()
@@ -110,6 +121,12 @@ class Maze:
     def _animate(self):
         self._win.redraw()
         sleep(.05)
+
+    def _break_entrance_and_exit(self):
+        entrance = self._cells[0][0]
+        exit = self._cells[len(self._cells)-1][len(self._cells[0])-1]
+        entrance.has_top_wall = False
+        exit.has_bottom_wall = False
 
 
 def main():
